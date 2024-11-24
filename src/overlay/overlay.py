@@ -26,7 +26,7 @@ class OverlayApp(tk.Tk):
         self.label.pack(pady=20)
 
         self.shaking = False
-
+        self.flash_state = False
         self.after(100, self.initialize_position)        
 
     def shake(self):
@@ -53,6 +53,32 @@ class OverlayApp(tk.Tk):
 
         self.update_data()
 
+    def flash_red(self):
+        if not self.flashing:
+            return
+
+        # Переключаем цвет фона
+        self.flash_state = not self.flash_state
+        if self.flash_state:
+            self.configure(bg='red')
+            self.label.configure(bg='red')
+        else:
+            self.configure(bg='black')
+            self.label.configure(bg='black')
+
+        # Планируем следующее переключение
+        self.after(200, self.flash_red)
+
+    def start_flashing(self):
+        if not self.flashing:
+            self.flashing = True
+            self.flash_red()
+
+    def stop_flashing(self):
+        self.flashing = False
+        self.configure(bg='black')
+        self.label.configure(bg='black')
+
     def update_data(self):
         try:
             response = requests.get('http://localhost:3000/get_data')
@@ -68,9 +94,10 @@ class OverlayApp(tk.Tk):
                 if time_until_next_appearance <= 10 and time_until_next_appearance != 0:
                     rune_coming_soon = True
 
-            if rune_coming_soon and not self.shaking:
-                self.shaking = True
-                self.shake()
+            if rune_coming_soon:
+                self.start_flashing()
+            else:
+                self.stop_flashing()
 
             self.label.config(text=msg)
         except Exception as e:
